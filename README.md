@@ -65,7 +65,8 @@ We launched Wireshark and began capturing network traffic over approximately two
 
 ### DNS Traffic — Domain Name Resolution
 
-![DNS Traffic Capture](Capture_d_écran_2026-03-16_181657.png)
+<img width="932" height="404" alt="Capture d&#39;écran 2026-03-16 181657" src="https://github.com/user-attachments/assets/698671fb-c9eb-45da-9072-462501fb7073" />
+
 
 **What we observed:**
 
@@ -73,7 +74,8 @@ The machine at `192.168.100.69` was actively querying the DNS resolver at `192.1
 
 ### HTTP Traffic — The Unencrypted Web
 
-![HTTP Traffic Capture](Capture_d_écran_2026-03-16_182213.png)
+<img width="930" height="422" alt="Capture d&#39;écran 2026-03-16 182213" src="https://github.com/user-attachments/assets/dd78912a-82f2-4ec6-982a-74d7e97dda7b" />
+
 
 **What we observed:**
 
@@ -83,7 +85,8 @@ More concerning were the BitTorrent tracker announce requests, visible in plaint
 
 ### TLS/HTTPS Traffic — Encrypted Communications
 
-![TLS Traffic Capture](TLS.png)
+<img width="951" height="402" alt="TLS" src="https://github.com/user-attachments/assets/e4a36566-0d35-4c81-a718-f9f5f6939e74" />
+
 
 **What we observed:**
 
