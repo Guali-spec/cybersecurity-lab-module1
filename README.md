@@ -16,160 +16,164 @@
 2. [Part 1 — Password Security](#part-1--password-security)
 3. [Part 2 — Network Traffic Capture](#part-2--network-traffic-capture)
 4. [Part 3 — Packet Analysis](#part-3--packet-analysis)
-5. [Analysis Questions](#analysis-questions)
-6. [Conclusion & Security Lessons](#conclusion--security-lessons)
+5. [Analysis & Findings](#analysis--findings)
+6. [Key Takeaways](#key-takeaways)
 
 ---
 
 ## Lab Overview
 
-This laboratory session introduced fundamental cybersecurity concepts through hands-on activities using **Wireshark**, a network protocol analyzer. The lab covered password security principles and practical observation of live network traffic to understand why encryption and strong authentication mechanisms are essential.
+This hands-on laboratory introduced core cybersecurity concepts through practical work with Wireshark, a powerful network protocol analyzer. Over the course of this session, we explored password security principles and examined real network traffic to understand why encryption and strong authentication are not optional—they're essential foundations of modern digital security.
 
 ---
 
 ## Part 1 — Password Security
 
-### Step 1: Weak Password Analysis
+### Understanding Weak Passwords
 
-The following passwords are considered extremely weak and dangerous:
+Let's start with a sobering reality: the following passwords are among the most commonly used—and most dangerous—choices people make:
 
-| Password | Why It Is Insecure |
+| Password | The Problem |
 |---|---|
-| `123456` | Purely numeric, sequential, and the most commonly used password worldwide |
-| `password` | Dictionary word, trivially guessed by any brute-force tool |
-| `admin` | Default credential for many systems — first thing attackers try |
-| `12345678` | Slightly longer but still entirely numeric and sequential |
-| `qwerty` | Keyboard pattern, well-known and included in every wordlist |
+| `123456` | Purely numeric and sequential—the #1 most used password globally |
+| `password` | A dictionary word that any automated tool can guess instantly |
+| `admin` | The default credential for countless systems; attackers try this first |
+| `12345678` | Still just numbers in order, slightly longer but equally weak |
+| `qwerty` | A keyboard pattern that appears in every cracker's wordlist |
 
-**Why these passwords are dangerous:**
-Attackers use automated tools that can test millions of combinations per second using **dictionary attacks** (trying known common words and passwords) and **brute-force attacks** (systematically trying every possible combination). A password like `123456` can be cracked in under one second.
+**Why these passwords fail so badly:**
 
-### Step 2: Strong Password Examples
+Modern password-cracking tools can test millions of combinations every second. They employ two primary strategies: dictionary attacks (systematically trying known words and common passwords) and brute-force attacks (testing every possible character combination). A password like `123456` typically falls within seconds.
 
-Following the required rules (minimum 12 characters, uppercase + lowercase, numbers, special characters):
+### Building Strong Passwords
+
+Strong passwords follow a simple but powerful rule: length plus complexity. These examples meet the requirements (minimum 12 characters with uppercase, lowercase, numbers, and special characters):
 
 1. `G!u1ss0u_S3cur3`
 2. `Cy83r#Lab@2026!`
 3. `N3tw0rk$Pr0t3ct!`
 
-These passwords are resistant to dictionary attacks due to their length, character variety, and absence of recognizable words or patterns.
+What makes these resilient is not just their length, but the mix of character types and the absence of recognizable patterns. Dictionary attacks become futile against them.
 
 ---
 
 ## Part 2 — Network Traffic Capture
 
-Wireshark was launched and traffic was captured on the active network interface for approximately two minutes while browsing several websites. The capture yielded **thousands of packets** across multiple protocols.
+### The Experiment Setup
 
-### Screenshot — DNS Traffic
+We launched Wireshark and began capturing network traffic over approximately two minutes of normal web browsing. The results were striking: **thousands of packets** flowing across the network interface, spanning multiple protocols and serving different purposes.
 
-The following capture shows DNS query and response traffic observed during the session:
+### DNS Traffic — Domain Name Resolution
 
 ![DNS Traffic Capture](Capture_d_écran_2026-03-16_181657.png)
 
-**Observation:** The host `192.168.100.69` was actively sending DNS queries to the DNS resolver at `192.168.100.1`. Domain names resolved include `bit.bf`, `opentor.org`, `safebrowsing.google.com`, `www.google.com`, `www.bing.com`, and `dns.msftncsi.com`. Each query triggered a standard DNS response containing the resolved IP address.
+**What we observed:**
 
-### Screenshot — HTTP Traffic
+The machine at `192.168.100.69` was actively querying the DNS resolver at `192.168.100.1` to translate domain names into IP addresses. The captured traffic revealed queries for domains including `bit.bf`, `opentor.org`, `safebrowsing.google.com`, `www.google.com`, `www.bing.com`, and `dns.msftncsi.com`. Each query received a standard DNS response containing the resolved IP address.
 
-The following capture shows unencrypted HTTP traffic:
+### HTTP Traffic — The Unencrypted Web
 
 ![HTTP Traffic Capture](Capture_d_écran_2026-03-16_182213.png)
 
-**Observation:** Multiple `GET /ncsi.txt HTTP/1.1` requests were sent from `192.168.100.69` to Microsoft connectivity check servers (`2.19.251.89` and `2.19.251.106`). These are Windows Network Connectivity Status Indicator (NCSI) probes sent automatically by the OS. Also visible are BitTorrent tracker announce requests (`GET /announce?info_hash=...`) sent over plain HTTP — a significant security concern as these expose user activity in cleartext.
+**What we observed:**
 
-### Screenshot — TLS/Encrypted Traffic
+Multiple `GET /ncsi.txt HTTP/1.1` requests traveled from `192.168.100.69` to Microsoft's connectivity check servers (`2.19.251.89` and `2.19.251.106`). These are automatic probes sent by Windows to verify internet connectivity—invisible to the user but visible to anyone monitoring the network.
 
-The following capture shows encrypted HTTPS/TLS traffic:
+More concerning were the BitTorrent tracker announce requests, visible in plaintext as `GET /announce?info_hash=...` sent over HTTP. Here was sensitive user activity, completely exposed.
+
+### TLS/HTTPS Traffic — Encrypted Communications
 
 ![TLS Traffic Capture](TLS.png)
 
-**Observation:** Multiple TLS 1.3 and TLS 1.2 sessions were observed. Notably, several `Client Hello` packets were sent to `85.13.142.29` with **SNI=bit.bf**, initiating encrypted sessions with that server. Other encrypted sessions involved IP addresses associated with GitHub (`140.82.112.26`), Google, and Microsoft. QUIC protocol packets were also observed, used by modern HTTPS connections.
+**What we observed:**
+
+Multiple TLS 1.3 and TLS 1.2 sessions were established during the capture. Notably, `Client Hello` packets targeting `85.13.142.29` included the **Server Name Indication (SNI) field** with the value `bit.bf`—indicating which domain the client wanted to reach. Other encrypted sessions connected to servers associated with GitHub (`140.82.112.26`), Google, and Microsoft. We also captured QUIC protocol packets, which power modern HTTP/3 connections.
 
 ---
 
 ## Part 3 — Packet Analysis
 
-### DNS Traffic
+### DNS Traffic Analysis
 
-Using the `dns` filter in Wireshark, DNS queries and responses were clearly visible.
+Using Wireshark's `dns` filter, DNS queries and responses became crystal clear.
 
-**Domain name observed:** `bit.bf`
+**Key finding:** The domain `bit.bf` appeared repeatedly in queries, and responses consistently resolved it to the IP address `85.13.142.29`.
 
-This domain was queried multiple times (both HTTPS and A record types), and its IP address was resolved to `85.13.142.29`.
+### HTTP Traffic Analysis
 
-### HTTP Traffic
+Applying the `http` filter revealed the full scope of unencrypted communication:
 
-Using the `http` filter, unencrypted HTTP packets exposed:
 - Full request URLs (e.g., `/ncsi.txt`, `/announce?info_hash=...`)
-- HTTP method (`GET`)
-- Server responses including status codes (`200 OK`, `403 Forbidden`, `404 Not Found`)
-- Client and server IP addresses
-- User activity indicators (BitTorrent tracker communication)
+- HTTP methods used (`GET`, `POST`, etc.)
+- Server responses and status codes (`200 OK`, `403 Forbidden`, `404 Not Found`)
+- Source and destination IP addresses
+- Behavioral indicators (BitTorrent tracker announces)
 
-This clearly illustrates how unencrypted traffic reveals sensitive behavioral information.
+This analysis drives home a fundamental lesson: without encryption, your activity is an open book.
 
-### Encrypted Traffic (TLS)
+### TLS/HTTPS Traffic Analysis
 
-Using the `tls` filter, TLS handshake and application data were visible. While the content of application data is unreadable (as expected from proper encryption), the **Server Name Indication (SNI)** field in `Client Hello` packets still leaks the target domain name in plaintext, even in TLS 1.3.
+The `tls` filter showed us the encrypted handshake process and application data. While the encrypted payload itself is unreadable—exactly as it should be—the **Server Name Indication (SNI)** field in the `Client Hello` message still leaks the target domain name in plaintext. This is a known limitation even in TLS 1.3.
 
 ---
 
-## Analysis Questions
+## Analysis & Findings
 
-### 1. Approximately how many packets were captured?
+### 1. How many packets were captured?
 
-During approximately two minutes of browsing, Wireshark captured **over 44,000 packets** (as evidenced by packet numbers reaching `44,745+` in the DNS capture). This highlights how much network activity occurs passively in the background, even with minimal user interaction.
+In just two minutes of browsing, Wireshark captured **over 44,000 packets**. This remarkable volume illustrates how much network communication happens constantly, much of it automatic and invisible to the user.
 
-### 2. List three protocols observed during the experiment
+### 2. Which protocols did we observe?
 
-| Protocol | Description |
+| Protocol | Purpose |
 |---|---|
-| **DNS** | Domain Name System — translates domain names to IP addresses |
-| **HTTP** | Hypertext Transfer Protocol — unencrypted web traffic |
-| **TLS / HTTPS** | Transport Layer Security — encrypted web communications |
+| **DNS** | Translates human-readable domain names into IP addresses |
+| **HTTP** | Transmits web content without encryption |
+| **TLS / HTTPS** | Secures web communications through encryption |
 
-Additional protocols observed: **QUIC** (UDP-based transport used by HTTP/3) and **TCP**.
+We also observed **QUIC** (the UDP-based protocol behind HTTP/3) and **TCP** (the foundation of most internet communication).
 
-### 3. Why is encryption important when browsing the internet?
+### 3. Why does encryption matter?
 
-Encryption is essential for several reasons:
+Encryption serves multiple critical functions:
 
-- **Confidentiality:** Without encryption, anyone on the same network (or any intermediate router) can read the full content of communications — including passwords, session tokens, personal data, and browsing history.
-- **Integrity:** Encryption prevents man-in-the-middle attackers from silently modifying data in transit (e.g., injecting malicious scripts into web pages).
-- **Authentication:** TLS certificates verify that the user is communicating with the legitimate server and not an impersonator.
-- **Protection against passive surveillance:** Encrypted traffic cannot be easily indexed, profiled, or monetized by third parties.
+- **Confidentiality:** Without it, anyone on the network—or any router handling your traffic—can read passwords, session tokens, personal data, and your complete browsing history.
+- **Integrity:** Encryption prevents attackers from silently modifying data in transit, such as injecting malicious scripts into web pages.
+- **Authentication:** TLS certificates prove you're talking to the real server, not an impersonator.
+- **Privacy from passive observation:** Encrypted traffic resists surveillance, profiling, and exploitation by third parties.
 
-As observed in this lab, even with TLS, the SNI field can reveal which domains are being visited. This is why technologies like **Encrypted Client Hello (ECH)** are being developed as a further privacy improvement.
+One important caveat: even with TLS, the SNI field can expose which sites you visit. Emerging technologies like **Encrypted Client Hello (ECH)** aim to close this final gap.
 
-### 4. What type of information could attackers obtain from unencrypted traffic?
+### 4. What could attackers extract from unencrypted traffic?
 
-From unencrypted (HTTP) traffic, an attacker performing passive capture could obtain:
+An attacker passively monitoring HTTP traffic could capture:
 
-- **Login credentials** (usernames and passwords submitted via HTTP forms)
-- **Session cookies** (which can be used to hijack authenticated sessions)
-- **Full URLs and query parameters** (revealing what pages are visited and what searches are made)
-- **Application behavior** (e.g., BitTorrent tracker announces revealing file-sharing activity)
-- **HTTP headers** (revealing browser type, operating system, referrer pages)
-- **Personal data** (any information submitted in unencrypted forms)
+- **Login credentials** (usernames and passwords from unencrypted forms)
+- **Session cookies** (enabling account hijacking without knowing the password)
+- **Complete URLs and search queries** (everything you visit and search for)
+- **Application behavior** (BitTorrent announces revealing file-sharing, for example)
+- **Browser and system information** (HTTP headers exposing OS version, browser type, etc.)
+- **Any submitted data** (personal information, documents, files—all visible)
 
-In this lab specifically, the HTTP capture revealed BitTorrent tracker communication, exposing the user's peer ID and the info_hash of files being shared — information that could be used for legal or targeted attacks.
+In our lab, the HTTP traffic exposed BitTorrent peer IDs and info hashes—data that could lead to identification and legal consequences.
 
 ---
 
-## Conclusion & Security Lessons
+## Key Takeaways
 
-This laboratory session provided a concrete demonstration of network communication and the critical role of cybersecurity mechanisms.
+This lab provided concrete evidence of how network communication works and why cybersecurity mechanisms exist.
 
-**Key lessons learned:**
+**What we learned:**
 
-1. **Weak passwords are a primary attack vector.** Common passwords can be cracked in seconds using freely available tools. Strong, unique passwords are a minimal baseline of security.
+1. **Weak passwords are the low-hanging fruit.** Standard passwords crack in seconds with freely available tools. Strong, unique passwords are the bare minimum of digital self-defense.
 
-2. **Network traffic is observable.** Every packet crossing a network can be captured and analyzed by anyone with physical or logical access to the network path — routers, ISPs, and local network participants alike.
+2. **All network traffic is observable.** Anyone with access to your network path—routers, ISPs, network neighbors, or hotel WiFi operators—can capture and analyze your packets.
 
-3. **Unencrypted communications are inherently insecure.** HTTP traffic exposes URLs, headers, cookies, and payload data in full plaintext, making it unsuitable for any sensitive communication.
+3. **Unencrypted communication has no secrets.** HTTP sends everything in plaintext: URLs, headers, cookies, form data. It should never be used for anything sensitive.
 
-4. **Encryption (TLS/HTTPS) is essential but not perfect.** While TLS protects the content of communications, metadata such as IP addresses and SNI domain names may still be visible, and misconfigured or outdated TLS implementations can introduce vulnerabilities.
+4. **Encryption is essential, but imperfect.** TLS protects your data's content effectively, yet metadata like IP addresses and SNI domain names can still leak. Keep systems updated and configurations secure.
 
-5. **Background activity is extensive.** Even without deliberate browsing, operating systems and applications continuously generate network traffic (NCSI probes, DNS pre-fetching, cloud sync, etc.), all of which can be observed and analyzed.
+5. **Background noise is constant.** Beyond deliberate browsing, your OS and applications continuously generate traffic—NCSI probes, DNS lookups, cloud syncing, updates. All of it can be seen.
 
 ---
 
